@@ -1,19 +1,52 @@
+import os
+
 import pymongo
+from pymongo.errors import PyMongoError
 
-client = pymongo.MongoClient("[ADD_MONGODB_URI_HERE]")
+_mongo_uri = os.getenv("MONGODB_URI")
+_memory_store = []
 
-db = client["titanic-database"]
+if _mongo_uri and _mongo_uri != "[ADD_MONGODB_URI_HERE]":
+    client = pymongo.MongoClient(_mongo_uri, serverSelectionTimeoutMS=1000)
+    db = client["titanic-database"]
+    collection = db["titanic"]
+else:
+    client = None
+    db = None
+    collection = None
 
-collection = db["titanic"]
 
 def add(document):
-    collection.insert_one(document)
+    if collection is None:
+        _memory_store.append(document.copy())
+        return
+
+    try:
+        collection.insert_one(document)
+    except PyMongoError:
+        _memory_store.append(document.copy())
+
 
 def getAll():
-    return list(db.titanic.find({}))
+    if collection is None:
+        return list(_memory_store)
+
+    try:
+        return list(db.titanic.find({}))
+    except PyMongoError:
+        return list(_memory_store)
+
 
 def deleteAll():
-    db.titanic.delete_many({})
+    if collection is None:
+        _memory_store.clear()
+        return
+
+    try:
+        db.titanic.delete_many({})
+    except PyMongoError:
+        _memory_store.clear()
+
 
 def printAll():
     allDocuments = getAll()

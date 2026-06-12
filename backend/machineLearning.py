@@ -20,7 +20,7 @@ def predictSurvived(passengerClass, male, age):
     predictorValues = [[passengerClass, male, age]]
 
     prediction = model.predict(predictorValues)
-    predictionAsInt = int(prediction)
+    predictionAsInt = int(prediction[0])
 
     return predictionAsInt
 
